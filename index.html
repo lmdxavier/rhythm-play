@@ -4,7 +4,7 @@
 <script>window.__RELEASE=true;try{window.__ADTEST=new URLSearchParams(location.search).get('adtest')}catch(e){}try{if(location.search)history.replaceState(null,"",location.pathname+location.hash)}catch(e){}</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>音游 v0.30</title>
+<title>音游 v0.30.1</title>
 <style>
 /* =====================================================================================
    v0.18 界面：三套皮肤，body.ui-bamboo（竹林像素，默认）/ ui-pop（手游 Q 弹）/ ui-paper（手绘纸质）
@@ -37027,7 +37027,7 @@ void main(){
   // 浏览器测试：?adtest=1 正常看完 / skip 中途关 / err 加载失败（发布版开头会清掉网址参数，所以在那里先存到 __ADTEST；在 TapTap 里不认）
   // 注意：页面里有 <div id="tap">（对拍面板），浏览器会把它挂成 window.tap，所以不能只看 typeof tap，要看有没有广告接口
   const IN_TAPTAP = (() => { try { return typeof tap !== 'undefined' && !!tap && typeof tap.createRewardedVideoAd === 'function'; } catch (e) { return false; } })();
-  const AD_TEST = !IN_TAPTAP ? (window.__ADTEST || new URLSearchParams(location.search).get('adtest')) : null;
+  const AD_TEST = !IN_TAPTAP ? (window.__ADTEST || new URLSearchParams(location.search).get('adtest') || '1') : null;   // v0.30.1：不在 TapTap 里（手机测试网址）默认用模拟广告，复活流程能完整走通；TapTap 里用真广告（要填 AD_UNIT_ID）
   const AD = { ad: null, cb: null, busy: false };
   function adInit() {
     if (AD_TEST || AD.ad) return;
