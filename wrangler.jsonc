@@ -1,0 +1,6 @@
+{
+  // Cloudflare 部署：整个仓库就是静态网页（rhythm 手机测试版）
+  "name": "rhythm-play",
+  "compatibility_date": "2026-11-01",
+  "assets": { "directory": "./" }
+}
