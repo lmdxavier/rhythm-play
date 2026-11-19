@@ -466,7 +466,7 @@ button.boing,.ui-pop button.boing{animation:boing .36s linear}
   <button class="big" id="btnStart">开 始</button>
   <div class="tools">
     <button id="btnLook" class="w3 acc">画风预览</button><button id="btnEdit" class="w3">谱面调整</button>
-    <button id="btnSet">设置</button><button id="btnCalib">延迟校准</button><button id="btnHelp">怎么玩</button><button id="btnAdRev" class="w6">复活次数 <b id="revTag"></b></button>
+    <button id="btnSet">设置</button><button id="btnCalib">延迟校准</button><button id="btnHelp">怎么玩</button><button id="btnAdRev" class="w6">获得复活次数<b id="revTag"></b></button>
   </div>
   <p class="small" id="startNote"></p>
   <div class="foot"><span id="bestScore"></span><span><span class="gem"></span>碎片 <b id="fragTotal">0</b></span></div>
@@ -563,10 +563,10 @@ button.boing,.ui-pop button.boing{animation:boing .36s linear}
   <h1>复活次数</h1>
   <div class="arBig"><b id="arTok">0</b><span id="arUnit">次</span></div>
   <ul class="arRules">
-    <li>每局最多复活 5 次，第 1 次免费</li>
+    <li>每局第 1 次复活免费</li>
     <li>之后每次复活用掉 1 次复活次数</li>
-    <li>看 1 次广告得 1 次，并按今天累计看的次数额外赠送：第 1 次 +1、第 2 次 +2、第 3 次 +3、第 4 次 +4</li>
-    <li>今天看满 5 次：今天复活都不用再看广告</li>
+    <li>看 1 次广告得 3 次复活次数</li>
+    <li>今天看满 5 次广告：今天复活全部免费</li>
   </ul>
   <div class="arProg"><span>今日已看</span><i></i><i></i><i></i><i></i><i></i></div>
   <button class="big" id="btnAdWatch">看广告</button>
@@ -37113,18 +37113,18 @@ void main(){
   const revTok = () => store.get('rhythm.revTok', 0) | 0;
   const adToday = () => { const o = store.get('rhythm.adDay', null); return o && o.d === dayKey() ? o.n | 0 : 0; };
   const freeToday = () => adToday() >= 5;
-  const adGain = k => k >= 5 ? 0 : 1 + k;          // 今天第 k 次广告得几次
-  function revTagSync() { const el = $('revTag'); if (el) el.textContent = freeToday() ? '· 今日免广告' : '×' + revTok(); }
+  const adGain = k => 3;                              // v0.37：每看 1 次广告得 3 次
+  function revTagSync() { const el = $('revTag'); if (el) el.textContent = ''; }
   let adFrom = null;
   function adPanel(from) {
     adFrom = from || null;
     const n = adToday(), free = n >= 5;
     $('arTok').textContent = free ? '今日' : revTok();
-    $('arUnit').textContent = free ? '复活不用看广告' : '次';
+    $('arUnit').textContent = free ? '复活全部免费' : '次';
     $('adRev').querySelectorAll('.arProg i').forEach((el, i) => el.classList.toggle('on', i < n));
     const w = $('btnAdWatch');
     w.disabled = free || AD.busy;
-    w.textContent = free ? '今天已不用看广告' : n === 4 ? '看广告（看满 5 次，今天复活不用看广告）' : '看广告 +' + adGain(n + 1) + ' 次';
+    w.textContent = free ? '今天复活全部免费' : n === 4 ? '看广告 +3 次（看满 5 次今天全部免费）' : '看广告 +3 次';
     $('btnAdBack').textContent = from === 'revive' ? '回去复活' : '返回';
     $('adHint').textContent = '';
     show('adRev');
@@ -37138,10 +37138,10 @@ void main(){
       if (ok === true) {
         const n = adToday() + 1;
         store.set('rhythm.adDay', { d: dayKey(), n });
-        if (n < 5) store.set('rhythm.revTok', revTok() + adGain(n));
+        store.set('rhythm.revTok', revTok() + adGain(n));
         uiSfx('rank', { good: true });
         revTagSync(); adPanel(adFrom);
-        $('adHint').textContent = n >= 5 ? '' : '得到 ' + adGain(n) + ' 次复活次数';
+        $('adHint').textContent = n >= 5 ? '今天复活全部免费' : '得到 3 次复活次数';
         return;
       }
       $('btnAdWatch').disabled = false;
@@ -37150,17 +37150,17 @@ void main(){
   };
   $('btnAdBack').onclick = () => { if (AD.busy) return; if (adFrom === 'revive' && G.revOffer) { revivePanel(); return; } revTagSync(); show('title'); };
   function revivePanel() {
-    const k = (G.revN || 0) + 1, left = REV_MAX - (G.revN || 0);
+    const k = (G.revN || 0) + 1;
     const free = k === 1 || freeToday(), tok = revTok();
-    $('revSub').textContent = '本局还能复活 ' + left + ' 次';
+    $('revSub').textContent = k === 1 ? '这局第 1 次复活免费' : freeToday() ? '今天复活全部免费' : '复活次数还剩 ' + tok + ' 次';
     const b = $('btnRevAd');
-    b.textContent = k === 1 ? '免费复活' : freeToday() ? '复活（今天不用看广告）' : tok > 0 ? '复活（剩 ' + tok + ' 次）' : '去看广告拿复活次数';
+    b.textContent = free || tok > 0 ? '复活' : '看广告拿复活次数';
     b.dataset.mode = free || tok > 0 ? 'revive' : 'ad';
     b.disabled = false; $('btnRevNo').disabled = false; $('revHint').textContent = '';
     show('revive');
   }
   function offerRevive() {
-    if (G.demo || G.bot || SET.practice || G.tut || (G.revN || 0) >= REV_MAX) return false;
+    if (G.demo || G.bot || SET.practice || G.tut) return false;
     G.revOffer = true; revivePanel();   // 状态保持 'dead'（画面停在倒下那一刻）
     return true;
   }
@@ -37200,7 +37200,7 @@ void main(){
       let gap = 0; for (const n of G.notes) { const o = old.get(n.id); if (n.skip && o && !o.done) gap += w(n); }
       Object.assign(G, { score: keep.score, maxCombo: keep.maxCombo, cnt: keep.cnt, frag: keep.frag, judged: keep.judged, devs: keep.devs, total: Math.max(1, keep.total - gap) });
     }
-    G.hp = 100 - 10 * k; G.combo = 0;             // 每复活一次血量少 10%，连击清零
+    G.hp = Math.max(50, 100 - 10 * k); G.combo = 0;   // 每复活一次血量少 10%（最低 50%），连击清零
     G.revOffer = false; G.revived = true; G.failed = false; G.tFloor = null;
     if (frost() && window.SFXT && SFXT.prepare) { try { SFXT.prepare(G.notes); } catch (e) { console.warn('SFXT.prepare', e); } }
     show(null, true);
