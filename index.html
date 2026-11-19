@@ -566,7 +566,7 @@ button.boing,.ui-pop button.boing{animation:boing .36s linear}
     <li>每局最多复活 5 次，第 1 次免费</li>
     <li>之后每次复活用掉 1 次复活次数</li>
     <li>看 1 次广告得 3 次复活次数</li>
-    <li>今天看满 5 次广告，本日复活全部免费</li>
+    <li>今日看满 5 次广告，今日复活全部免费</li>
   </ul>
   <div class="arProg"><span>今日已看</span><i></i><i></i><i></i><i></i><i></i></div>
   <button class="big" id="btnAdWatch">看广告</button>
@@ -37124,7 +37124,7 @@ void main(){
     $('adRev').querySelectorAll('.arProg i').forEach((el, i) => el.classList.toggle('on', i < n));
     const w = $('btnAdWatch');
     w.disabled = free || AD.busy;
-    w.textContent = free ? '今天复活全部免费' : n === 4 ? '看广告 +3 次（看满 5 次今天全部免费）' : '看广告 +3 次';
+    w.textContent = free ? '今日复活全部免费' : n === 4 ? '看广告 +3 次（看满 5 次今日全部免费）' : '看广告 +3 次';
     $('btnAdBack').textContent = from === 'revive' ? '回去复活' : '返回';
     $('adHint').textContent = '';
     show('adRev');
@@ -37141,7 +37141,7 @@ void main(){
         store.set('rhythm.revTok', revTok() + adGain(n));
         uiSfx('rank', { good: true });
         revTagSync(); adPanel(adFrom);
-        $('adHint').textContent = n >= 5 ? '今天复活全部免费' : '得到 3 次复活次数';
+        $('adHint').textContent = n >= 5 ? '今日复活全部免费' : '得到 3 次复活次数';
         return;
       }
       $('btnAdWatch').disabled = false;
@@ -37152,7 +37152,7 @@ void main(){
   function revivePanel() {
     const k = (G.revN || 0) + 1, left = REV_MAX - (G.revN || 0);
     const free = k === 1 || freeToday(), tok = revTok();
-    $('revSub').textContent = '本局还能复活 ' + left + ' 次' + (k === 1 ? '，这次免费' : freeToday() ? '，今天免费' : '，复活次数剩 ' + tok + ' 次');
+    $('revSub').textContent = '本局还能复活 ' + left + ' 次' + (k === 1 ? '，这次免费' : freeToday() ? '，今日免费' : '，复活次数剩 ' + tok + ' 次');
     const b = $('btnRevAd');
     b.textContent = free || tok > 0 ? '复活' : '看广告拿复活次数';
     b.dataset.mode = free || tok > 0 ? 'revive' : 'ad';
