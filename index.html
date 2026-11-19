@@ -21,7 +21,7 @@ html,body{margin:0;height:100%;background:#07060f;font-family:var(--sans);overfl
 .panel{position:fixed;left:0;right:0;margin:0 auto;width:min(92vw,420px);height:fit-content;max-height:92vh;padding:16px 18px;display:none;z-index:5;overflow:auto;touch-action:pan-y;overscroll-behavior:contain}
 .panel.on,.panel.out{display:block}
 .panel.out{pointer-events:none}
-#revive,#adRev,#pause,#result,#tutDone,#calib,#help,#settings,#tap,#edit{top:0;bottom:0;margin:auto}
+#revive,#adRev,#pause,#result,#tutDone,#tutRule,#calib,#help,#settings,#tap,#edit{top:0;bottom:0;margin:auto}
 #edit{width:min(96vw,520px)}
 #title{bottom:max(2.5vh,10px)}
 #look{bottom:max(2vh,8px);max-height:66vh}
@@ -572,6 +572,13 @@ button.boing,.ui-pop button.boing{animation:boing .36s linear}
   <button class="big" id="btnAdWatch">看广告</button>
   <div class="row" style="margin-top:12px"><button id="btnAdBack" style="flex:1">返回</button></div>
   <div class="hint" id="adHint"></div>
+</div>
+
+<div class="panel" id="tutRule">
+  <h1>规则</h1>
+  <p style="font-size:16px;line-height:1.75;margin:6px 6px 4px">怪物按不同的节拍向你靠近，到你面前后，下一拍向你攻击。</p>
+  <p style="font-size:16px;line-height:1.75;margin:4px 6px 18px">在它攻击的那一拍，朝怪物的方向滑动屏幕，就能打退它。</p>
+  <button class="big" id="btnTutRuleGo">开始</button>
 </div>
 
 <div class="panel" id="tutDone">
@@ -36102,7 +36109,7 @@ void main(){
     const s1 = SECTIONS.find(s => s.key !== 'prelude') || SECTIONS[0];
     let kb = tutSnapBar(Math.round(tutBF(s1.t0)));
     const lastT = CH.charts.normal.reduce((a, n) => Math.max(a, n.tEnd || n.t2 || n.t), 0);
-    const si = Math.min(types.length - 1, Math.max(0, store.get(tutKey(), 0) | 0));
+    const si = 0;   // v0.41：每次进教学都从头开始
     return { types, si, phase: 'intro', round: null, nextAt: 0, fails: 0, replay: false, lane: 1, loopStart: tutBT(kb), loopEnd: lastT + BAR, metroK: null, msg: '', msgT: 0, fb: '', fbT: -9, over: false, stageN: 0 };
   }
   function tutUnit(ty, lane, tb, auto) {
@@ -36121,7 +36128,7 @@ void main(){
   function shuffle4() { const a = [0, 1, 2, 3]; for (let i = 3; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } if (a[0] === G.tut.lane && Math.random() < 0.7) a.push(a.shift()); return a; }
   function tutMsgFor(T) {
     const ty = T.types[T.si], info = TUT_INFO[ty], kind = tutKind(ty);
-    if (T.phase === 'intro' || (T.phase === 'demo')) return (T.stageN === 0 || (T.stageN === 1 && T.phase === 'demo')) && !T.replay ? '怪物按不同的节拍向你靠近，到你面前后，下一拍向你攻击。在它攻击的那一拍，朝怪物的方向滑动屏幕，就能打退它。' : (T.replay ? '再看一次：' : '看示范：') + info[2];
+    if (T.phase === 'intro' || (T.phase === 'demo')) return (T.replay ? '再看一次：' : '看示范：') + info[2];
     if (T.phase === 'lane') return (T.fails ? '再来一组：' : '轮到你了：') + '4 只打中 3 只就过' + (kind === 'uni' ? '，打中后按住' : kind === 'big' ? '，每只打两下' : '');
     return '四个方向都会来，看清从哪边来';
   }
@@ -36140,10 +36147,12 @@ void main(){
     const half = (BASE[ty] || ty) === 'off' ? 0.5 : 0;
     const lead = TUT_LEAD[kind] - ((BASE[ty] || ty) === 'shroom' ? 3 : 0);
     let k = tutSnapBar(Math.ceil(tutBF(t) + lead));
+    // v0.41：每组从八拍（两小节）开头起，和跳回点（第一个正式段落的小节线）对齐
+    { const K0 = Math.round(tutBF(T.loopStart)); for (let i = 0; i < 4 && (((k - K0) % 8) + 8) % 8 !== 0; i++) k = tutSnapBar(k + 1); }
     // 示范：左、右各一只；玩家：右、右、左、上或下（同一路隔「只出一边」的拍数，换路隔「四个方向」的拍数）
     const lanes = ph === 'demo' ? [3, 1] : [1, 1, 3, Math.random() < 0.5 ? 0 : 2];
     const sp0 = TUT_SP[kind][0], sp1 = TUT_SP[kind][1];
-    let tb = k + half; const tbs = lanes.map((l, i) => (i ? (tb += (ph === 'demo' || l === lanes[i - 1]) ? sp0 : sp1) : tb));
+    let tb = k + half; const tbs = lanes.map((l, i) => (i ? (tb += sp0) : tb));   // v0.41：每只隔一小节，都踩在小节第 1 拍（蓝帽 / 橙史莱姆仍在反拍）
     const lastTb = tbs[tbs.length - 1] + (kind === 'uni' ? 2 : kind === 'big' ? 1 : 0);
     if (tutBT(lastTb) + 1 > T.loopEnd) { tutLoop(t); return; }
     T.round = { phase: ph, units: lanes.map((l, i) => tutUnit(ty, l, tbs[i], ph === 'demo')) };
@@ -37040,6 +37049,10 @@ void main(){
     G.revived = false; G.revN = 0;
     newRun();
     if (frost() && window.SFXT && SFXT.prepare) { try { SFXT.prepare(G.tut ? G.tut.types.concat(['shot']).map((type, t) => ({ type, t })) : G.notes); } catch (e) { console.warn('SFXT.prepare', e); } }
+    if (G.tut) {   // v0.41：教学先单独显示总规则，看完点「开始」
+      G.state = 'rule'; show('tutRule');
+      await new Promise(res => { $('btnTutRuleGo').onclick = () => { $('btnTutRuleGo').onclick = null; res(); }; });
+    }
     show(null, true);
     G.state = 'play';
     const pos = Math.max(0, (SET.start || 0) - BAR);
